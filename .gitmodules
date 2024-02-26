@@ -1,0 +1,3 @@
+[submodule "mage-fireballs"]
+	path = mage-fireballs
+	url = git@github.com:Nivani/mage-fireballs.git
