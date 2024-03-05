@@ -1,0 +1,36 @@
+<!DOCTYPE html><p>Did you ever spend <strong>a lot of time</strong> cleaning, refactoring, testing and documenting your code, you’re <strong>proud</strong> of the result, and then… <strong>nobody</strong> notices? While <em>some</em> developers on your team just <strong>hack something together</strong>, leave <strong>horrible code</strong> behind and then <strong>get praised</strong> for delivering “quickly”.</p>
+<p><strong>Frustrating</strong>, right? You start to wonder: <strong>is clean code even worth the effort?</strong></p>
+<p>The answer is: <strong>Yes!</strong></p>
+<p>Let’s take a look at a few reasons why.</p>
+<h2 id="working-in-a-bad-code-base-sucks">Working in a bad code base sucks</h2>
+<p>I’m sure every developer remembers at least one of those <strong>hours-long debug sessions</strong> where it’s <strong>mind-numbing</strong> just parsing <strong>what the heck is even going on</strong>, let alone <strong>solve the actual problem</strong>. Working in a <strong>bad</strong> code base is <strong>frustrating</strong> and <strong>sucks</strong>!</p>
+<p>Making changes to a bad code base is <strong>slow</strong> and on top of that, the frustration has a negative impact on <strong>motivation</strong> and that impacts the <strong>team</strong>’s ability to do good work even further.</p>
+<p>That was a bit of a no-brainer, so let’s get to the real stuff.</p>
+<h2 id="clean-code-pays-off-more-quickly-than-we-expect">Clean code pays off more quickly than we expect</h2>
+<p>Most people know that we try to write clean, readable code because <strong>bad code comes back to haunt us</strong> over the long term, but we <strong>underestimate</strong> just <strong>how quickly</strong> that happens.</p>
+<p>The question “Is the extra work <strong>clean code</strong> requires worth the effort?” is part of a more general question: “Is building <strong>high quality software</strong> worth the effort?”</p>
+<p>In 2019, the great Martin Fowler published an article titled: <a href="https://martinfowler.com/articles/is-quality-worth-cost.html">Is High Quality Software Worth the Cost?</a>.</p>
+<p>In the chapter <a href="https://martinfowler.com/articles/is-quality-worth-cost.html#VisualizingTheImpactOfInternalQuality">“Visualizing the impact of internal quality”</a>, he admits that you <strong>can be faster</strong> in the <strong>short-term</strong> with quick, low-quality code, but points out that people <strong>underestimate</strong> how quickly this becomes a <strong>problem</strong>. He visualizes it with a nice (pseudo-)graph:</p>
+<p><img src="/assets/blog/high-quality-vs-low-quality.png" alt="High quality vs low quality" title="High quality vs low quality"></p>
+<p>I’ve seen this happen an number of times. When someone says “bad code will slow us down (cost us money) in the future”, people seem to think that we’re talking about <strong>some far-away future</strong>, like more than a year from now. But it <strong>doesn’t take long</strong> for low-quality code to start <strong>slowing us down</strong>. For <strong>larger teams</strong>, I agree with Martin Fowler, it’s a matter of <strong>weeks</strong>. For <strong>smaller teams</strong>, it may take a little longer, but we’re still talking no more than <a href="/index.php/2022/07/31/4-tips-to-understand-your-code-4-months-from-now/">a few <strong>months</strong></a>.</p>
+<p>The only situations where you <strong>can</strong> be faster by quickly hacking something together is when all of these apply:</p>
+<ul>
+<li>Short-term results are the only thing that matters</li>
+<li>It’s new code or clean existing code</li>
+<li>Everything fits in your head <em>(making it fit into someone else’s head will be a problem though)</em></li>
+</ul>
+<p>That’s a lot of ifs and there are <strong>very few</strong> situations where it makes sense to do this. By quickly hacking something together you pretty much always <strong>shoot yourself</strong> (or the company you work for) <strong>in the foot</strong>.</p>
+<h2 id="writing-clean-code-doesnt-have-to-take-forever">Writing clean code doesn’t have to take forever</h2>
+<p>Writing clean code might seem like <strong>a lot</strong> of effort <strong>at first</strong>, but the more you <strong>practice</strong> it the more clean your code will be from the start, to a point where you’re actually <strong>faster</strong> writing cleaner code.</p>
+<p>If you’re a perfectionist, try to be <strong>pragmatic</strong> because there are <strong>diminishing returns</strong>: you could get your code to eg. 80% pretty quickly, but trying to have perfect textbook definition clean code can take a lot of time and is not the goal. You can tweak your code forever and still find some things to change.</p>
+<p>Your main goal should be, when a <strong>random developer</strong> gets dropped into the code to make a <strong>change</strong>:</p>
+<ul>
+<li>The change can be made in <strong>one place</strong> without changes in many other places (loose coupling)</li>
+<li>It is <strong>clear</strong> what the code is doing and where the change should be made <strong>without</strong> having to carefully <strong>read every line</strong> to understand what’s going on.</li>
+</ul>
+<p>In summary, write clean code because:</p>
+<ul>
+<li>Working in a bad code base sucks</li>
+<li>Bad code will come back to haunt you more quickly than you think</li>
+<li>It doesn’t have to take forever</li>
+</ul>
