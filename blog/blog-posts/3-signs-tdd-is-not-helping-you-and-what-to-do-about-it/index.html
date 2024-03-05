@@ -1,0 +1,48 @@
+<!DOCTYPE html><p>At first sight, Test-Driven Development (TDD) seems like it comes from a magical place where requirements are clear, determined in advance and never change. But in practice, the business never makes up their mind, user requirements change all the time and countless tests break every time you have to make a change. It’s just a big waste of time!</p>
+<p>This is how a lot of people experience TDD, but it doesn’t have to be this way.</p>
+<p>TDD became popular as part of Extreme Programming (XP). One of the main points of XP is to expect changing requirements and provide practices to deal with that. TDD is one of those practices, so when countless tests break every time you make a change, something’s wrong. This can be worse than having no tests.</p>
+<p>Here’s 3 signs TDD isn’t helping you:</p>
+<ol>
+<li>Every time you make a change, countless tests break and have to be updated.</li>
+<li>When refactoring, you have to rewrite all the tests.</li>
+<li>You’re spending more time mocking than actually testing.</li>
+</ol>
+<p>All of these can be avoided by <strong>picking the right unit</strong> for your unit tests.</p>
+<h1 id="whats-the-unit">What’s the unit?</h1>
+<p>Unit tests are often testing a single class or function and anything outside of that class or function is mocked. This leads to a ton of white-box, very fine-grained tests that break every time something changes. This is a real pain for little gain.</p>
+<p>There is a key misunderstanding about unit tests that still persists today: the unit under test. Picking the right unit is a very valuable skill to have.</p>
+<p>In an episode of The Engineering Room on Youtube, Michael feathers explains it as <a href="https://www.youtube.com/watch?v=UGD8pMMJlbk&#x26;t=1682s">“What’s the thing that you can test easy?”</a>.</p>
+<blockquote>
+<p>…if you can easily test it because it has <strong>minimal coupling</strong> to other pieces, then that’s the unit. It doesn’t matter if it’s three or four classes working together, but it’s this <strong>cohesive chunk</strong> that you can work with.</p>
+</blockquote>
+<p>There is also the popular talk “TDD, Where Did It All Go Wrong”, where <a href="https://www.youtube.com/watch?v=EZ05e7EMOLM&#x26;t=1729s">Ian Cooper explains this misunderstanding at 28:49</a>. He says:</p>
+<blockquote>
+<p>The system under test is really the exports from a module, its facade.</p>
+</blockquote>
+<p>This facade can be a single class or interface, but the implementation details could have more classes. You’re looking to test a <strong>stable contract</strong>.</p>
+<p>If you get the unit right and that unit has a flexible contract that is not prone to breaking changes, you will have fewer mocks and much fewer breaking tests.</p>
+<h1 id="but-what-does-this-mean-in-practice">But what does this mean in practice?</h1>
+<p>As an example, let’s take the frontend of a user registration flow:</p>
+<ol>
+<li>Asking the user’s e-mail address, a password and repeat the password</li>
+<li>Asking for a confirmation code that was sent by e-mail</li>
+<li>Registration success with links to</li>
+</ol>
+<p>When we want to have unit tests, what would be a good unit?</p>
+<p>What about… the whole thing?</p>
+<p>It has a <strong>stable contract</strong>: the input fields that need to be filled in, the buttons to press and the calls to the backend.</p>
+<p>It’s a <strong>cohesive chunk</strong> with <strong>minimal coupling</strong>: the only dependencies are a few API calls to the backend we can mock.</p>
+<p>But won’t this lead to so many tests it’s hard to see what’s going on anymore?</p>
+<p>It might feel like the unit is too big for a unit test, but it all depends on what you’re testing and where.</p>
+<h1 id="what-are-you-testing-where">What are you testing where?</h1>
+<p>The unit under test is the registration flow, so the tests should focus on the registration flow itself, not on all the little details of the flow.</p>
+<p>For example: you test that when a user fills in an invalid e-mail address, a validation message is shown and we can’t continue to the next step. You don’t test all the ways an e-mail address can be invalid.</p>
+<p>If you want to test all the ways an e-mail address can be invalid, create a <a href="https://en.wikipedia.org/wiki/Pure_function">pure</a> e-mail validation function, test it separately and use it in your components. It’s not because the validation function is already part of another test that you cannot test it individually.</p>
+<p>Some people will say “But you have to mock out the e-mail validation, because if there’s a bug in it, your registration flow tests might fail even though there is nothing wrong with the flow itself”.</p>
+<p>This is a risk, but it’s only a small risk. A bug in the e-mail validation function will most likely manifest in the edge-cases. If you use e-mail addresses like <code>john.doe@gmail.com</code> and <code>obviously_not_an_email_address.test</code> while testing the registration flow, you will not run into these problems. Not worth mocking everything out.</p>
+<p>Though the unit seems big, if your tests run in isolation, are self-contained, fast and small these are perfectly fine unit tests.</p>
+<p>Next time you’re doing TDD:</p>
+<ul>
+<li>Look for units that are <strong>cohesive chunks</strong> with <strong>minimal coupling</strong> and a <strong>stable contract</strong>. Design your code so that these exist.</li>
+<li>Make sure your tests <strong>focus on the unit under test</strong>, not all the little details of the unit that can be tested individually.</li>
+</ul>

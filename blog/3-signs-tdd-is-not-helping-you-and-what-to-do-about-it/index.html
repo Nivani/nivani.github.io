@@ -1,0 +1,150 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-losip7nv> <head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" type="image/x-icon" href="/favicon.ico"><!-- Primary Meta Tags --><title>3 signs TDD is not helping you and what to do about it</title><meta name="title" content="3 signs TDD is not helping you and what to do about it"><meta name="description" content="At first sight, Test-Driven Development (TDD) seems like it comes from a magical place where requirements are clear, determined in advance and never change..."><!-- Open Graph / Facebook --><meta property="og:type" content="website"><meta property="og:url" content="https://nivani.github.io/blog/undefined"><meta property="og:title" content="3 signs TDD is not helping you and what to do about it"><meta property="og:description" content="At first sight, Test-Driven Development (TDD) seems like it comes from a magical place where requirements are clear, determined in advance and never change..."><meta property="og:image" content="https://nivani.github.io/assets/social.png"><!-- Twitter --><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://nivani.github.io/blog/undefined"><meta property="twitter:title" content="3 signs TDD is not helping you and what to do about it"><meta property="twitter:description" content="At first sight, Test-Driven Development (TDD) seems like it comes from a magical place where requirements are clear, determined in advance and never change..."><meta property="twitter:image" content="https://nivani.github.io/assets/social.png"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.6pKMWmWU.css" />
+<style>header[data-astro-cid-4sn4zg3r]{text-align:center}header[data-astro-cid-4sn4zg3r] h1[data-astro-cid-4sn4zg3r]{margin-bottom:.7em}header[data-astro-cid-4sn4zg3r] p[data-astro-cid-4sn4zg3r]{color:var(--text-secondary);text-transform:uppercase;font-family:var(--font-family-sans);font-weight:600}header[data-astro-cid-4sn4zg3r] hr[data-astro-cid-4sn4zg3r]{min-width:100px;width:30%}
+</style><script type="module" src="/_astro/hoisted.nXAUxZIp.js"></script></head> <body data-astro-cid-losip7nv> <div class="layout" data-astro-cid-losip7nv> <header data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-tvrurpns> <img alt="NVNH.io Logo" src="/assets/professional-picture.webp" height="50" data-astro-cid-tvrurpns> <div data-astro-cid-tvrurpns>
+NVNH.io
+<div class="in-progress" data-astro-cid-tvrurpns>New site, in progress...</div> </div> </a> <nav data-astro-cid-dmqpwcec> <a class="selected" href="/" data-astro-cid-dmqpwcec>blog</a> <a class="" href="/about" data-astro-cid-dmqpwcec>about</a> </nav> </header> <main data-astro-cid-losip7nv>  <header data-astro-cid-4sn4zg3r> <p data-astro-cid-4sn4zg3r>Dec 30, 2023</p> <h1 data-astro-cid-4sn4zg3r>3 signs TDD is not helping you and what to do about it</h1> <hr data-astro-cid-4sn4zg3r> </header> <div class="container" data-astro-cid-4sn4zg3r> <article class="content" data-astro-cid-4sn4zg3r> <p>At first sight, Test-Driven Development (TDD) seems like it comes from a magical place where requirements are clear, determined in advance and never change. But in practice, the business never makes up their mind, user requirements change all the time and countless tests break every time you have to make a change. It’s just a big waste of time!</p>
+<p>This is how a lot of people experience TDD, but it doesn’t have to be this way.</p>
+<p>TDD became popular as part of Extreme Programming (XP). One of the main points of XP is to expect changing requirements and provide practices to deal with that. TDD is one of those practices, so when countless tests break every time you make a change, something’s wrong. This can be worse than having no tests.</p>
+<p>Here’s 3 signs TDD isn’t helping you:</p>
+<ol>
+<li>Every time you make a change, countless tests break and have to be updated.</li>
+<li>When refactoring, you have to rewrite all the tests.</li>
+<li>You’re spending more time mocking than actually testing.</li>
+</ol>
+<p>All of these can be avoided by <strong>picking the right unit</strong> for your unit tests.</p>
+<h1 id="whats-the-unit">What’s the unit?</h1>
+<p>Unit tests are often testing a single class or function and anything outside of that class or function is mocked. This leads to a ton of white-box, very fine-grained tests that break every time something changes. This is a real pain for little gain.</p>
+<p>There is a key misunderstanding about unit tests that still persists today: the unit under test. Picking the right unit is a very valuable skill to have.</p>
+<p>In an episode of The Engineering Room on Youtube, Michael feathers explains it as <a href="https://www.youtube.com/watch?v=UGD8pMMJlbk&#x26;t=1682s">“What’s the thing that you can test easy?”</a>.</p>
+<blockquote>
+<p>…if you can easily test it because it has <strong>minimal coupling</strong> to other pieces, then that’s the unit. It doesn’t matter if it’s three or four classes working together, but it’s this <strong>cohesive chunk</strong> that you can work with.</p>
+</blockquote>
+<p>There is also the popular talk “TDD, Where Did It All Go Wrong”, where <a href="https://www.youtube.com/watch?v=EZ05e7EMOLM&#x26;t=1729s">Ian Cooper explains this misunderstanding at 28:49</a>. He says:</p>
+<blockquote>
+<p>The system under test is really the exports from a module, its facade.</p>
+</blockquote>
+<p>This facade can be a single class or interface, but the implementation details could have more classes. You’re looking to test a <strong>stable contract</strong>.</p>
+<p>If you get the unit right and that unit has a flexible contract that is not prone to breaking changes, you will have fewer mocks and much fewer breaking tests.</p>
+<h1 id="but-what-does-this-mean-in-practice">But what does this mean in practice?</h1>
+<p>As an example, let’s take the frontend of a user registration flow:</p>
+<ol>
+<li>Asking the user’s e-mail address, a password and repeat the password</li>
+<li>Asking for a confirmation code that was sent by e-mail</li>
+<li>Registration success with links to</li>
+</ol>
+<p>When we want to have unit tests, what would be a good unit?</p>
+<p>What about… the whole thing?</p>
+<p>It has a <strong>stable contract</strong>: the input fields that need to be filled in, the buttons to press and the calls to the backend.</p>
+<p>It’s a <strong>cohesive chunk</strong> with <strong>minimal coupling</strong>: the only dependencies are a few API calls to the backend we can mock.</p>
+<p>But won’t this lead to so many tests it’s hard to see what’s going on anymore?</p>
+<p>It might feel like the unit is too big for a unit test, but it all depends on what you’re testing and where.</p>
+<h1 id="what-are-you-testing-where">What are you testing where?</h1>
+<p>The unit under test is the registration flow, so the tests should focus on the registration flow itself, not on all the little details of the flow.</p>
+<p>For example: you test that when a user fills in an invalid e-mail address, a validation message is shown and we can’t continue to the next step. You don’t test all the ways an e-mail address can be invalid.</p>
+<p>If you want to test all the ways an e-mail address can be invalid, create a <a href="https://en.wikipedia.org/wiki/Pure_function">pure</a> e-mail validation function, test it separately and use it in your components. It’s not because the validation function is already part of another test that you cannot test it individually.</p>
+<p>Some people will say “But you have to mock out the e-mail validation, because if there’s a bug in it, your registration flow tests might fail even though there is nothing wrong with the flow itself”.</p>
+<p>This is a risk, but it’s only a small risk. A bug in the e-mail validation function will most likely manifest in the edge-cases. If you use e-mail addresses like <code>john.doe@gmail.com</code> and <code>obviously_not_an_email_address.test</code> while testing the registration flow, you will not run into these problems. Not worth mocking everything out.</p>
+<p>Though the unit seems big, if your tests run in isolation, are self-contained, fast and small these are perfectly fine unit tests.</p>
+<p>Next time you’re doing TDD:</p>
+<ul>
+<li>Look for units that are <strong>cohesive chunks</strong> with <strong>minimal coupling</strong> and a <strong>stable contract</strong>. Design your code so that these exist.</li>
+<li>Make sure your tests <strong>focus on the unit under test</strong>, not all the little details of the unit that can be tested individually.</li>
+</ul> </article> <hr data-astro-cid-4sn4zg3r>
+      <h4>Want to learn more? Get the FREE TDD training exercise!</h4>
+<p>TDD is not so much about the code you end up with, but about <strong>the way you got there</strong>. The best way to learn TDD, is to <strong>pair with an experienced engineer</strong>.</p>
+<p>I can’t pair with every one of you, but there <strong>is</strong> something I can do:</p>
+<p>Want to see how an <strong>experienced engineer</strong> uses <strong>TDD</strong> to build a <strong>web frontend</strong> and then <strong>apply it yourself</strong> in the same codebase?</p>
+<p>Get the <strong>FREE</strong> TDD training exercise below.</p>
+<p>We’ll go further than the trivial examples you find all over the internet, but without the stress and hassle of a real project. That way you learn things you can <strong>actually use</strong> in your day job.</p>
+<p>We will be implementing a registration flow where users can sign up and confirm their account with a verification code.</p>
+<p>You get:</p>
+<ul>
+    <li><strong>A <code>git</code> repository</strong> with:
+        <ul>
+            <li>the exercise itself</li>
+            <li>the solution</li>
+            <li>a commit for each step of the way</li>
+        </ul>
+    </li>
+    <li><strong>1.5 hour of video</strong>:
+        <ul>
+            <li>going through the entire exercise from start to finish</li>
+            <li>with explanation of what’s happening and why</li>
+        </ul>
+    </li>
+</ul>
+<style type="text/css">
+    .signup-form #mc_embed_signup .button {
+        background-color: var(--primary-color);
+    }
+
+    .signup-form #mc_embed_signup .button:hover {
+        background-color: var(--text-secondary);
+    }
+</style>
+<div id="mc_embed_shell" class="signup-form">
+    <link href="//cdn-images.mailchimp.com/embedcode/classic-061523.css" rel="stylesheet" type="text/css">
+    <style type="text/css">
+        #mc_embed_signup {
+            background: #fff;
+            false;
+            clear: left;
+            font: 14px Helvetica, Arial, sans-serif;
+            max-width: 600px;
+        }
+
+        /* Add your own Mailchimp form style overrides in your site stylesheet or in this style block.
+           We recommend moving this block and the preceding CSS link to the HEAD of your HTML file. */
+    </style>
+    <div id="mc_embed_signup">
+        <form action="https://nvnh.us17.list-manage.com/subscribe/post?u=e298845160752d2eba26fd749&amp;id=163da5c191&amp;f_id=0006bce0f0"
+              method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate"
+              target="_blank" novalidate="novalidate">
+            <div id="mc_embed_signup_scroll">
+                <div class="indicates-required"><span class="asterisk">*</span> indicates required</div>
+                <div class="mc-field-group"><label for="mce-EMAIL">Email Address <span class="asterisk">*</span></label><input
+                        type="email" name="EMAIL" class="required email" id="mce-EMAIL" required="" value=""
+                        aria-required="true"></div>
+                <div class="mc-field-group"><label for="mce-FNAME">(optional) First Name </label><input type="text"
+                                                                                                        name="FNAME"
+                                                                                                        class="text"
+                                                                                                        id="mce-FNAME"
+                                                                                                        value="">
+                    <input type="hidden" name="tags" value="6590726,6590730">
+                </div>
+                <div id="mce-responses" class="clear foot">
+                    <div class="response" id="mce-error-response" style="display: none;"></div>
+                    <div class="response" id="mce-success-response" style="display: none;"></div>
+                </div>
+                <div style="position: absolute; left: -5000px;" aria-hidden="true">
+                    /* real people should not fill this in and expect good things - do not remove this or risk form bot
+                    signups */
+                    <input type="text" name="b_e298845160752d2eba26fd749_163da5c191" tabindex="-1" value="">
+                </div>
+                <div class="optionalParent">
+                    <div class="clear foot">
+                        <input type="submit" name="subscribe" id="mc-embedded-subscribe" class="button"
+                               value="Send it to me!">
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <script type="text/javascript" src="//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js"></script>
+    <script type="text/javascript">(function ($) {
+      window.fnames = new Array();
+      window.ftypes = new Array();
+      fnames[0] = 'EMAIL';
+      ftypes[0] = 'email';
+      fnames[1] = 'FNAME';
+      ftypes[1] = 'text';
+      fnames[2] = 'LNAME';
+      ftypes[2] = 'text';
+    }(jQuery));
+    var $mcj = jQuery.noConflict(true);</script>
+</div>
+<p>No spam, no sharing your data with third parties.</p> </div>
+ </div>  </main> <footer data-astro-cid-sz7xmlte> <span data-astro-cid-sz7xmlte>
+&copy; 2024 NVNH.io.
+    Powered by <a href="https://astro.build" target="_blank" rel="noopener" data-astro-cid-sz7xmlte>Astro</a>.
+</span> </footer>  </div> </body></html> 

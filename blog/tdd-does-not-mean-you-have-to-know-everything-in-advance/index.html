@@ -1,0 +1,123 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-losip7nv> <head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" type="image/x-icon" href="/favicon.ico"><!-- Primary Meta Tags --><title>No, TDD does not mean you have to know everything in advance</title><meta name="title" content="No, TDD does not mean you have to know everything in advance"><meta name="description" content="Test-Driven Development (TDD) means you write tests first before you write the implementation. It sounds simple enough, but in practice you feel like this only works for rockstar developers..."><!-- Open Graph / Facebook --><meta property="og:type" content="website"><meta property="og:url" content="https://nivani.github.io/blog/undefined"><meta property="og:title" content="No, TDD does not mean you have to know everything in advance"><meta property="og:description" content="Test-Driven Development (TDD) means you write tests first before you write the implementation. It sounds simple enough, but in practice you feel like this only works for rockstar developers..."><meta property="og:image" content="https://nivani.github.io/assets/social.png"><!-- Twitter --><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://nivani.github.io/blog/undefined"><meta property="twitter:title" content="No, TDD does not mean you have to know everything in advance"><meta property="twitter:description" content="Test-Driven Development (TDD) means you write tests first before you write the implementation. It sounds simple enough, but in practice you feel like this only works for rockstar developers..."><meta property="twitter:image" content="https://nivani.github.io/assets/social.png"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.6pKMWmWU.css" />
+<style>header[data-astro-cid-4sn4zg3r]{text-align:center}header[data-astro-cid-4sn4zg3r] h1[data-astro-cid-4sn4zg3r]{margin-bottom:.7em}header[data-astro-cid-4sn4zg3r] p[data-astro-cid-4sn4zg3r]{color:var(--text-secondary);text-transform:uppercase;font-family:var(--font-family-sans);font-weight:600}header[data-astro-cid-4sn4zg3r] hr[data-astro-cid-4sn4zg3r]{min-width:100px;width:30%}
+</style><script type="module" src="/_astro/hoisted.nXAUxZIp.js"></script></head> <body data-astro-cid-losip7nv> <div class="layout" data-astro-cid-losip7nv> <header data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-tvrurpns> <img alt="NVNH.io Logo" src="/assets/professional-picture.webp" height="50" data-astro-cid-tvrurpns> <div data-astro-cid-tvrurpns>
+NVNH.io
+<div class="in-progress" data-astro-cid-tvrurpns>New site, in progress...</div> </div> </a> <nav data-astro-cid-dmqpwcec> <a class="selected" href="/" data-astro-cid-dmqpwcec>blog</a> <a class="" href="/about" data-astro-cid-dmqpwcec>about</a> </nav> </header> <main data-astro-cid-losip7nv>  <header data-astro-cid-4sn4zg3r> <p data-astro-cid-4sn4zg3r>Sep 19, 2023</p> <h1 data-astro-cid-4sn4zg3r>No, TDD does not mean you have to know everything in advance</h1> <hr data-astro-cid-4sn4zg3r> </header> <div class="container" data-astro-cid-4sn4zg3r> <article class="content" data-astro-cid-4sn4zg3r> <p>Test-Driven Development (TDD) means you write tests first before you write the implementation.</p>
+<p>It sounds simple enough, but in practice you feel like this only works for rockstar developers. You have to have the perfect code in your head before you even start! But you don’t know how the code will look like. You just write it first and then add tests afterwards. Testing is a chore. You just do it because your PR will not be approved if you don’t or because someone will complain that code coverage went down.</p>
+<p>If this is your experience, you’re not alone. Getting started is the hard part, that first failing test.</p>
+<p>Let’s see what <a href="https://en.wikipedia.org/wiki/Test-driven_development#Test-driven_development_cycle">Wikipedia has to say</a>:</p>
+<blockquote>
+<p>The adding of a new feature begins by writing a test that passes iff the feature’s specifications are met. The developer can discover these specifications by asking about use cases and user stories. A key benefit of test-driven development is that it makes the developer focus on requirements before writing code. This is in contrast with the usual practice, where unit tests are only written after code.</p>
+</blockquote>
+<p>Often times the gap between the “use case” or “user story” you got assigned and the code is too big to just write a test. You don’t know enough about that part of the application or that part of the code to get started and you want to write some code to see what happens or to experiment with different solutions.</p>
+<p>But you also want to do TDD and TDD says you need to write a failing test first 😮. So you get a chicken-and-egg problem. The thing is: that experimentation by writing code is part of “discovering the specifications”, so it’s totally ok to hack away without tests at this stage.</p>
+<p>Saying you can’t write any code without having a failing test first is like saying you can’t do <em>any</em> architecture or design because you’re doing TDD. There have also been misunderstandings about this. Uncle Bob <a href="https://blog.cleancoder.com/uncle-bob/2017/03/03/TDD-Harms-Architecture.html#emergence">has written about it</a>:</p>
+<blockquote>
+<p>The idea that the high level design and architecture of a system emerge from TDD is, frankly, absurd. Before you begin to code any software project, you need to have some architectural vision in place. TDD will not, and can not, provide this vision. That is not TDD’s role.</p>
+</blockquote>
+<p>Once you know enough to write a failing test, make sure to <strong>start from scratch</strong>. If you don’t, testing will be harder and you will bypass a lot of the advantages of TDD. It will lead to complicated and brittle tests.</p>
+<p>You don’t need to delete all your code, but set it aside for inspiration and start from scratch <strong>with</strong> a failing test.</p>
+<h1 id="tdd-is-an-ideal">TDD is an ideal</h1>
+<p>We would like to live in magical fairy land where everything is perfect and we can Red -> Green -> Refactor all of our code all of the time. But we live in the real world. Of course there is code that is harder to test and code that is easier to test. Some parts of an application are inherently harder to test even if it’s the best code in the world. Some bad codebases make it very hard to write <em>any</em> tests. It’s easy to get discouraged trying to apply TDD there.</p>
+<p>Should we write off TDD because of this? Does TDD suck because of this?</p>
+<p>Of course not!</p>
+<p>If you’re having bad experiences try TDD on pure functions or a set of classes without dependencies first. Once you see the benefits, you’ll be motivated to use it on the harder-to-test code as well.</p>
+<p>TDD has gone through many misunderstandings over the years. I highly recommend this <a href="https://www.youtube.com/watch?v=EZ05e7EMOLM">talk by Ian Cooper</a> for anyone practicing TDD.</p> </article> <hr data-astro-cid-4sn4zg3r>
+      <h4>Want to learn more? Get the FREE TDD training exercise!</h4>
+<p>TDD is not so much about the code you end up with, but about <strong>the way you got there</strong>. The best way to learn TDD, is to <strong>pair with an experienced engineer</strong>.</p>
+<p>I can’t pair with every one of you, but there <strong>is</strong> something I can do:</p>
+<p>Want to see how an <strong>experienced engineer</strong> uses <strong>TDD</strong> to build a <strong>web frontend</strong> and then <strong>apply it yourself</strong> in the same codebase?</p>
+<p>Get the <strong>FREE</strong> TDD training exercise below.</p>
+<p>We’ll go further than the trivial examples you find all over the internet, but without the stress and hassle of a real project. That way you learn things you can <strong>actually use</strong> in your day job.</p>
+<p>We will be implementing a registration flow where users can sign up and confirm their account with a verification code.</p>
+<p>You get:</p>
+<ul>
+    <li><strong>A <code>git</code> repository</strong> with:
+        <ul>
+            <li>the exercise itself</li>
+            <li>the solution</li>
+            <li>a commit for each step of the way</li>
+        </ul>
+    </li>
+    <li><strong>1.5 hour of video</strong>:
+        <ul>
+            <li>going through the entire exercise from start to finish</li>
+            <li>with explanation of what’s happening and why</li>
+        </ul>
+    </li>
+</ul>
+<style type="text/css">
+    .signup-form #mc_embed_signup .button {
+        background-color: var(--primary-color);
+    }
+
+    .signup-form #mc_embed_signup .button:hover {
+        background-color: var(--text-secondary);
+    }
+</style>
+<div id="mc_embed_shell" class="signup-form">
+    <link href="//cdn-images.mailchimp.com/embedcode/classic-061523.css" rel="stylesheet" type="text/css">
+    <style type="text/css">
+        #mc_embed_signup {
+            background: #fff;
+            false;
+            clear: left;
+            font: 14px Helvetica, Arial, sans-serif;
+            max-width: 600px;
+        }
+
+        /* Add your own Mailchimp form style overrides in your site stylesheet or in this style block.
+           We recommend moving this block and the preceding CSS link to the HEAD of your HTML file. */
+    </style>
+    <div id="mc_embed_signup">
+        <form action="https://nvnh.us17.list-manage.com/subscribe/post?u=e298845160752d2eba26fd749&amp;id=163da5c191&amp;f_id=0006bce0f0"
+              method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate"
+              target="_blank" novalidate="novalidate">
+            <div id="mc_embed_signup_scroll">
+                <div class="indicates-required"><span class="asterisk">*</span> indicates required</div>
+                <div class="mc-field-group"><label for="mce-EMAIL">Email Address <span class="asterisk">*</span></label><input
+                        type="email" name="EMAIL" class="required email" id="mce-EMAIL" required="" value=""
+                        aria-required="true"></div>
+                <div class="mc-field-group"><label for="mce-FNAME">(optional) First Name </label><input type="text"
+                                                                                                        name="FNAME"
+                                                                                                        class="text"
+                                                                                                        id="mce-FNAME"
+                                                                                                        value="">
+                    <input type="hidden" name="tags" value="6590726,6590730">
+                </div>
+                <div id="mce-responses" class="clear foot">
+                    <div class="response" id="mce-error-response" style="display: none;"></div>
+                    <div class="response" id="mce-success-response" style="display: none;"></div>
+                </div>
+                <div style="position: absolute; left: -5000px;" aria-hidden="true">
+                    /* real people should not fill this in and expect good things - do not remove this or risk form bot
+                    signups */
+                    <input type="text" name="b_e298845160752d2eba26fd749_163da5c191" tabindex="-1" value="">
+                </div>
+                <div class="optionalParent">
+                    <div class="clear foot">
+                        <input type="submit" name="subscribe" id="mc-embedded-subscribe" class="button"
+                               value="Send it to me!">
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <script type="text/javascript" src="//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js"></script>
+    <script type="text/javascript">(function ($) {
+      window.fnames = new Array();
+      window.ftypes = new Array();
+      fnames[0] = 'EMAIL';
+      ftypes[0] = 'email';
+      fnames[1] = 'FNAME';
+      ftypes[1] = 'text';
+      fnames[2] = 'LNAME';
+      ftypes[2] = 'text';
+    }(jQuery));
+    var $mcj = jQuery.noConflict(true);</script>
+</div>
+<p>No spam, no sharing your data with third parties.</p> </div>
+ </div>  </main> <footer data-astro-cid-sz7xmlte> <span data-astro-cid-sz7xmlte>
+&copy; 2024 NVNH.io.
+    Powered by <a href="https://astro.build" target="_blank" rel="noopener" data-astro-cid-sz7xmlte>Astro</a>.
+</span> </footer>  </div> </body></html> 
