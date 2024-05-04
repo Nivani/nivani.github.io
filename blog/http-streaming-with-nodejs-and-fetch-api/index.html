@@ -1,0 +1,306 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-losip7nv> <head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" type="image/x-icon" href="/favicon.ico"><!-- Primary Meta Tags --><title>Implementing HTTP Streaming with Node.js and Fetch API</title><meta name="title" content="Implementing HTTP Streaming with Node.js and Fetch API"><meta name="description" content="When your webapp has a large amount of data to visualize, you don't want your users to wait 10 seconds before seeing something. One technique that is often overlooked is HTTP streaming. It's broadly supported, works well, and doesn't require fancy libraries...."><!-- Open Graph / Facebook --><meta property="og:type" content="website"><meta property="og:url" content="https://nivani.github.io/blog/undefined"><meta property="og:title" content="Implementing HTTP Streaming with Node.js and Fetch API"><meta property="og:description" content="When your webapp has a large amount of data to visualize, you don't want your users to wait 10 seconds before seeing something. One technique that is often overlooked is HTTP streaming. It's broadly supported, works well, and doesn't require fancy libraries...."><meta property="og:image" content="https://nivani.github.io/assets/social.png"><!-- Twitter --><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://nivani.github.io/blog/undefined"><meta property="twitter:title" content="Implementing HTTP Streaming with Node.js and Fetch API"><meta property="twitter:description" content="When your webapp has a large amount of data to visualize, you don't want your users to wait 10 seconds before seeing something. One technique that is often overlooked is HTTP streaming. It's broadly supported, works well, and doesn't require fancy libraries...."><meta property="twitter:image" content="https://nivani.github.io/assets/social.png"><script defer src="https://analytics.eu.umami.is/script.js" data-website-id="de7625a0-8842-47c8-b1a1-0764201653fb"></script><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.hin-BGNh.css" />
+<style>header[data-astro-cid-4sn4zg3r]{text-align:center}header[data-astro-cid-4sn4zg3r] h1[data-astro-cid-4sn4zg3r]{margin-bottom:.7em}header[data-astro-cid-4sn4zg3r] p[data-astro-cid-4sn4zg3r]{color:var(--text-secondary);text-transform:uppercase;font-family:var(--font-family-sans);font-weight:600}
+</style><script type="module" src="/_astro/hoisted.Wx_u0zP6.js"></script></head> <body data-astro-cid-losip7nv> <div class="layout" data-astro-cid-losip7nv> <header data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-tvrurpns> <img alt="NVNH.io Logo" src="/assets/professional-picture.webp" height="50" data-astro-cid-tvrurpns> <div data-astro-cid-tvrurpns>
+NVNH.io
+<div class="tagline" data-astro-cid-tvrurpns></div> </div> </a> <nav data-astro-cid-dmqpwcec> <a class="selected" href="/" data-astro-cid-dmqpwcec>blog</a> <a class="" href="/about" data-astro-cid-dmqpwcec>about</a> </nav> </header> <main data-astro-cid-losip7nv>  <header data-astro-cid-4sn4zg3r> <p data-astro-cid-4sn4zg3r>Apr 27, 2022</p> <h1 data-astro-cid-4sn4zg3r>Implementing HTTP Streaming with Node.js and Fetch API</h1> </header> <div class="container" data-astro-cid-4sn4zg3r> <hr data-astro-cid-4sn4zg3r> <article class="content" data-astro-cid-4sn4zg3r> <p><em>Before I started this website I wrote this article for <a href="https://www.loginradius.com/">LoginRadius</a> (<a href="https://www.loginradius.com/blog/engineering/guest-post/http-streaming-with-nodejs-and-fetch-api/">link to post</a>).</em></p>
+<p><em>A working example of the technique demonstrated here can be found in the <a href="https://github.com/Nivani/http-streaming">accompanying GitHub repo</a>.</em></p>
+<hr>
+<p>When your webapp has a large amount of data to visualize, you don’t want your users to wait 10 seconds before seeing something.</p>
+<p>One technique that is often overlooked is HTTP streaming. It’s broadly supported, works well, and doesn’t require fancy libraries.</p>
+<p>We’re going to go through how we can use HTTP streaming in our applications and what to consider when we do so.</p>
+<h2 id="introduction">Introduction</h2>
+<p>When building web applications, we typically have a REST API with GET endpoints that do something like this:</p>
+<ol>
+<li>Parse the request (URL, query params, etc..)</li>
+<li>Query data from a database</li>
+<li>Convert the database results into JSON</li>
+<li>Send the JSON response back</li>
+</ol>
+<p>The API will typically wait for each step to complete before going on to the next one, and by step 4, the database result and the JSON objects are all in memory before the request is handled, and everything can be cleaned up.</p>
+<p>This works, and there is nothing wrong with it (KISS, right?) as long as your database query results are small and quickly available.</p>
+<p>But let’s say you want to render a chart with 10k data points. Querying will not be as smooth anymore.
+The simple way will work, but ideally, you don’t want to accumulate all the data in memory before sending the response.</p>
+<p>With HTTP streaming, you can start rendering the chart even before your query is complete.</p>
+<p>To make it happen:</p>
+<ol>
+<li>Your API should use HTTP streaming to send its response.</li>
+<li>Your webapp should use the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API">Fetch API</a> to make the request so that it can process the streaming response.</li>
+</ol>
+<h2 id="create-a-streaming-api">Create a Streaming API</h2>
+<p>In this example, we use <a href="https://koajs.com/">Koa</a> for the API, but you can use other libraries like Express or plain Node.js. Most will have support for streaming.</p>
+<p>Let’s create an API:</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color:#D73A49">const</span><span style="color:#005CC5"> Koa</span><span style="color:#D73A49"> =</span><span style="color:#6F42C1"> require</span><span style="color:#24292E">(</span><span style="color:#032F62">'koa'</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">const</span><span style="color:#005CC5"> app</span><span style="color:#D73A49"> =</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> Koa</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">app.</span><span style="color:#6F42C1">use</span><span style="color:#24292E">(</span><span style="color:#D73A49">async</span><span style="color:#24292E"> (</span><span style="color:#E36209">ctx</span><span style="color:#24292E">) </span><span style="color:#D73A49">=></span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (ctx.request.url </span><span style="color:#D73A49">===</span><span style="color:#032F62"> '/measurements.json'</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">        ctx.response.</span><span style="color:#6F42C1">set</span><span style="color:#24292E">(</span><span style="color:#032F62">'content-type'</span><span style="color:#24292E">, </span><span style="color:#032F62">'application/json'</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#6A737D">        // This is where the magic happens: set a stream as the response body</span></span>
+<span class="line"><span style="color:#24292E">        ctx.body </span><span style="color:#D73A49">=</span><span style="color:#24292E"> fs.</span><span style="color:#6F42C1">createReadStream</span><span style="color:#24292E">(</span><span style="color:#032F62">'./measurements.json'</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">http.</span><span style="color:#6F42C1">createServer</span><span style="color:#24292E">(app.</span><span style="color:#6F42C1">callback</span><span style="color:#24292E">()).</span><span style="color:#6F42C1">listen</span><span style="color:#24292E">(</span><span style="color:#005CC5">3000</span><span style="color:#24292E">);</span></span></code></pre>
+<p>This code creates an API with 1 endpoint <code>GET /measurements</code> that will respond with the contents of a JSON file with 10k measurements.</p>
+<p>The file looks like this:</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color:#24292E">[</span></span>
+<span class="line"><span style="color:#24292E">  { </span><span style="color:#005CC5">"id"</span><span style="color:#24292E">: </span><span style="color:#032F62">"1"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"timestamp"</span><span style="color:#24292E">:  </span><span style="color:#032F62">"2022-01-19T10:39:00.000Z"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:  </span><span style="color:#005CC5">239.34</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">  { </span><span style="color:#005CC5">"id"</span><span style="color:#24292E">: </span><span style="color:#032F62">"2"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"timestamp"</span><span style="color:#24292E">:  </span><span style="color:#032F62">"2022-01-19T10:40:00.000Z"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:  </span><span style="color:#005CC5">820.14</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">  { </span><span style="color:#005CC5">"id"</span><span style="color:#24292E">: </span><span style="color:#032F62">"3"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"timestamp"</span><span style="color:#24292E">:  </span><span style="color:#032F62">"2022-01-19T10:41:00.000Z"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:  </span><span style="color:#005CC5">926.03</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">  { </span><span style="color:#005CC5">"id"</span><span style="color:#24292E">: </span><span style="color:#032F62">"4"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"timestamp"</span><span style="color:#24292E">:  </span><span style="color:#032F62">"2022-01-19T10:42:00.000Z"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:  </span><span style="color:#005CC5">513.01</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#6A737D">  // ...</span></span>
+<span class="line"><span style="color:#24292E">  { </span><span style="color:#005CC5">"id"</span><span style="color:#24292E">: </span><span style="color:#032F62">"99998"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"timestamp"</span><span style="color:#24292E">:  </span><span style="color:#032F62">"2022-03-29T21:16:00.000Z"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:  </span><span style="color:#005CC5">13.81</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">  { </span><span style="color:#005CC5">"id"</span><span style="color:#24292E">: </span><span style="color:#032F62">"99999"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"timestamp"</span><span style="color:#24292E">: </span><span style="color:#032F62">"2022-03-29T21:17:00.000Z"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"value"</span><span style="color:#24292E">: </span><span style="color:#005CC5">465.28</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">  { </span><span style="color:#005CC5">"id"</span><span style="color:#24292E">: </span><span style="color:#032F62">"100000"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"timestamp"</span><span style="color:#24292E">:  </span><span style="color:#032F62">"2022-03-29T21:18:00.000Z"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:  </span><span style="color:#005CC5">71.95</span><span style="color:#24292E"> }</span></span>
+<span class="line"><span style="color:#24292E">]</span></span></code></pre>
+<p>We’re creating an HTTP/1.1 server with Node’s <code>http</code> module. By setting <code>ctx.body</code> to a stream, data will be sent to the requester as soon as it is loaded using a mechanism called <a href="https://en.wikipedia.org/wiki/Chunked_transfer_encoding">chunked transfer encoding</a>.</p>
+<p>This saves time and memory of your API because it doesn’t have to accumulate the whole result in memory before sending the response.</p>
+<p>In a real application, you’re probably using a database instead of a pre-created JSON file.
+If you’re using MongoDB, you can create a stream with the <a href="https://docs.mongodb.com/drivers/node/current/fundamentals/crud/read-operations/cursor/#stream-api">cursor’s <code>stream()</code> method</a>.</p>
+<h2 id="consume-a-streaming-api-from-a-webapp">Consume a Streaming API From a Webapp</h2>
+<p>The <code>GET /measurements</code> endpoint we created can be consumed with any HTTP client, but you have to use the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Streams_API/Using_readable_streams#consuming_a_fetch_as_a_stream">Fetch API</a> to take advantage of streaming.</p>
+<p><code>fetch()</code> will set <code>response.body</code> to a <a href="https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream">ReadableStream</a> for streaming responses.</p>
+<p>Here’s how you can read a streaming response:</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color:#6F42C1">fetch</span><span style="color:#24292E">(</span><span style="color:#032F62">'http://localhost:3000/measurements.json'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">then</span><span style="color:#24292E">(</span><span style="color:#D73A49">async</span><span style="color:#24292E"> (</span><span style="color:#E36209">response</span><span style="color:#24292E">) </span><span style="color:#D73A49">=></span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">        // response.body is a ReadableStream</span></span>
+<span class="line"><span style="color:#D73A49">        const</span><span style="color:#005CC5"> reader</span><span style="color:#D73A49"> =</span><span style="color:#24292E"> response.body.</span><span style="color:#6F42C1">getReader</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">        for</span><span style="color:#D73A49"> await</span><span style="color:#24292E"> (</span><span style="color:#D73A49">const</span><span style="color:#005CC5"> chunk</span><span style="color:#D73A49"> of</span><span style="color:#6F42C1"> readChunks</span><span style="color:#24292E">(reader)) {</span></span>
+<span class="line"><span style="color:#24292E">            console.</span><span style="color:#6F42C1">log</span><span style="color:#24292E">(</span><span style="color:#032F62">`received chunk of size ${</span><span style="color:#24292E">chunk</span><span style="color:#032F62">.</span><span style="color:#005CC5">length</span><span style="color:#032F62">}`</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    });</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// readChunks() reads from the provided reader and yields the results into an async iterable</span></span>
+<span class="line"><span style="color:#D73A49">function</span><span style="color:#6F42C1"> readChunks</span><span style="color:#24292E">(</span><span style="color:#E36209">reader</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">        async* [Symbol.asyncIterator]() {</span></span>
+<span class="line"><span style="color:#D73A49">            let</span><span style="color:#24292E"> readResult </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> await</span><span style="color:#24292E"> reader.</span><span style="color:#6F42C1">read</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">            while</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">readResult.done) {</span></span>
+<span class="line"><span style="color:#D73A49">                yield</span><span style="color:#24292E"> readResult.value;</span></span>
+<span class="line"><span style="color:#24292E">                readResult </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> await</span><span style="color:#24292E"> reader.</span><span style="color:#6F42C1">read</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"><span style="color:#24292E">        },</span></span>
+<span class="line"><span style="color:#24292E">    };</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>If you run the API that we created and then run the code above in a web browser, you’ll see <code>received chunk of size x</code> several times in the console with varying x:</p>
+<p><img src="/assets/blog/http-streaming-with-nodejs-and-fetch-api/console-received-chunk-of-size-x.gif" alt="The console showing &#x22;received chunk of size x&#x22;"></p>
+<p>To see it more clearly, open up Developer Tools (F12) and set network throttling to 3G. It will take longer for the file to download, so you can see that the chunks are being processed gradually.</p>
+<p>That’s all very nice, but the chunks themselves are not very useful. You want to process the measurements that are in these chunks. Ideally, you would have an async iterable that gradually yields the JSON objects as they come in so that you can use <code>for await</code> to iterate over the measurements instead of the chunks.</p>
+<p>JavaScript doesn’t have a JSON parser that can deal with streams. Let’s assume we have a function that can do this called <code>parseJsonStream(readableStream)</code>. More details and a simple implementation can be found in “Streaming Considerations” below.</p>
+<p>We would then be able to do this:</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color:#6F42C1">fetch</span><span style="color:#24292E">(</span><span style="color:#032F62">'http://localhost:3000/measurements.json'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">then</span><span style="color:#24292E">(</span><span style="color:#D73A49">async</span><span style="color:#24292E"> (</span><span style="color:#E36209">response</span><span style="color:#24292E">) </span><span style="color:#D73A49">=></span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">        let</span><span style="color:#24292E"> measurementsReceived </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">        for</span><span style="color:#D73A49"> await</span><span style="color:#24292E"> (</span><span style="color:#D73A49">const</span><span style="color:#005CC5"> measurement</span><span style="color:#D73A49"> of</span><span style="color:#6F42C1"> parseJsonStream</span><span style="color:#24292E">(response.body)) {</span></span>
+<span class="line"><span style="color:#24292E">            measurementsReceived</span><span style="color:#D73A49">++</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#6A737D">            // To prevent the console from flooding we only show 1 in every 100 measurements</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (measurementsReceived </span><span style="color:#D73A49">%</span><span style="color:#005CC5"> 100</span><span style="color:#D73A49"> ===</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">                console.</span><span style="color:#6F42C1">log</span><span style="color:#24292E">(</span><span style="color:#032F62">`measurement with id {${</span><span style="color:#24292E">measurement</span><span style="color:#032F62">.</span><span style="color:#24292E">id</span><span style="color:#032F62">}} at time ${</span><span style="color:#24292E">measurement</span><span style="color:#032F62">.</span><span style="color:#24292E">timestamp</span><span style="color:#032F62">} has value [${</span><span style="color:#24292E">measurement</span><span style="color:#032F62">.</span><span style="color:#24292E">value</span><span style="color:#032F62">}]`</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    });</span></span></code></pre>
+<p>This is the result:</p>
+<p><img src="/assets/blog/http-streaming-with-nodejs-and-fetch-api/console-measurements.gif" alt="The console showing &#x22;measurement with id ... has value ...&#x22;"></p>
+<p>This is a very powerful mechanism. Instead of <code>console.log()</code> statements, imagine a line chart where the measurements gradually become visible as more data comes in.</p>
+<p>This is an example created with <a href="https://echarts.apache.org/">Apache ECharts</a>:</p>
+<p><img src="/assets/blog/http-streaming-with-nodejs-and-fetch-api/chart-loading-gradually.gif" alt="A line chart gradually becoming visible as data comes in"></p>
+<p>Before the Fetch API, it was impossible to do this because the alternative, <a href="https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest"><code>XMLHttpRequest</code></a>, will load the whole response into memory before providing it to your code.</p>
+<p>Modern applications don’t use <code>XMLHttpRequest</code> directly, but a lot of libraries like <a href="https://axios-http.com/">Axios</a> or Angular’s <a href="https://angular.io/api/common/http/HttpClient">HttpClient</a> rely on it to make requests.</p>
+<p>People would rely on more advanced technologies like <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API">WebSockets</a> to stream data.</p>
+<h2 id="http2-for-streaming">HTTP/2 for Streaming</h2>
+<p>You might have heard that HTTP/2 has a more efficient mechanism for streaming, and you would be right. So let’s see if we can use HTTP/2.</p>
+<p>From the side of your webapp, the browser will automatically determine if it can communicate with the server over HTTP/2 and use it if it’s available. The Fetch API will do this transparently, so you do not need to make any changes to your webapp.</p>
+<p>What you need to do is make your API available over HTTP/2:</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color:#D73A49">const</span><span style="color:#005CC5"> Koa</span><span style="color:#D73A49"> =</span><span style="color:#6F42C1"> require</span><span style="color:#24292E">(</span><span style="color:#032F62">'koa'</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">const</span><span style="color:#005CC5"> app</span><span style="color:#D73A49"> =</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> Koa</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">app.</span><span style="color:#6F42C1">use</span><span style="color:#24292E">(</span><span style="color:#D73A49">async</span><span style="color:#24292E"> (</span><span style="color:#E36209">ctx</span><span style="color:#24292E">) </span><span style="color:#D73A49">=></span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (ctx.request.url </span><span style="color:#D73A49">===</span><span style="color:#032F62"> '/measurements.json'</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">        ctx.response.</span><span style="color:#6F42C1">set</span><span style="color:#24292E">(</span><span style="color:#032F62">'content-type'</span><span style="color:#24292E">, </span><span style="color:#032F62">'application/json'</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">        ctx.body </span><span style="color:#D73A49">=</span><span style="color:#24292E"> fs.</span><span style="color:#6F42C1">createReadStream</span><span style="color:#24292E">(</span><span style="color:#032F62">'./measurements.json'</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">http2.</span><span style="color:#6F42C1">createSecureServer</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">    {</span></span>
+<span class="line"><span style="color:#24292E">        key: fs.</span><span style="color:#6F42C1">readFileSync</span><span style="color:#24292E">(path.</span><span style="color:#6F42C1">resolve</span><span style="color:#24292E">(</span><span style="color:#032F62">'path/to/localhost-key.pem'</span><span style="color:#24292E">)),</span></span>
+<span class="line"><span style="color:#24292E">        cert: fs.</span><span style="color:#6F42C1">readFileSync</span><span style="color:#24292E">(path.</span><span style="color:#6F42C1">resolve</span><span style="color:#24292E">(</span><span style="color:#032F62">'path/to/localhost.pem'</span><span style="color:#24292E">)),</span></span>
+<span class="line"><span style="color:#24292E">    },</span></span>
+<span class="line"><span style="color:#24292E">    app.</span><span style="color:#6F42C1">callback</span><span style="color:#24292E">(),</span></span>
+<span class="line"><span style="color:#24292E">).</span><span style="color:#6F42C1">listen</span><span style="color:#24292E">(</span><span style="color:#005CC5">3000</span><span style="color:#24292E">);</span></span></code></pre>
+<p>This code is mostly the same as for HTTP/1.1 with two notable differences:</p>
+<ul>
+<li>We’re using Node’s <code>http2</code> module instead of <code>http</code>.</li>
+<li>We’re using <code>HTTPS</code> instead of plain <code>HTTP</code> because this is mandatory for HTTP/2. You can set up HTTPS and get the <code>cert</code> and <code>key</code> files using <a href="https://github.com/FiloSottile/mkcert">mkcert</a>. Or, use one of the other mechanisms described in this article: <a href="https://web.dev/how-to-use-local-https/">https://web.dev/how-to-use-local-https/</a></li>
+</ul>
+<p>That’s it!</p>
+<p>If you restart the API and check the network tab in Developer Tools, you’ll see that your application will now stream over HTTP/2 (don’t forget to update the URL in your webapp, start with “https://” instead of “http://”).</p>
+<h2 id="http-streaming-considerations">HTTP Streaming Considerations</h2>
+<p>In the code above, we assumed that there was a function <code>parseJsonStream(readableStream)</code> that would parse a <code>ReadableStream</code> containing JSON into an async iterable of objects.</p>
+<p>The difficulty is that reading from a <code>ReadableStream</code> will give you chunks of data that don’t necessarily correspond to anything meaningful. To illustrate, let’s take a look at this example:</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color:#24292E">[</span></span>
+<span class="line"><span style="color:#24292E">  { </span><span style="color:#005CC5">"id"</span><span style="color:#24292E">: </span><span style="color:#032F62">"1"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"timestamp"</span><span style="color:#24292E">:  </span><span style="color:#032F62">"2022-01-19T10:39:00.000Z"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:  </span><span style="color:#005CC5">239.34</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">  { </span><span style="color:#005CC5">"id"</span><span style="color:#24292E">: </span><span style="color:#032F62">"2"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"timestamp"</span><span style="color:#24292E">:  </span><span style="color:#032F62">"2022-01-19T10:40:00.000Z"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:  </span><span style="color:#005CC5">820.14</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">  { </span><span style="color:#005CC5">"id"</span><span style="color:#24292E">: </span><span style="color:#032F62">"3"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"timestamp"</span><span style="color:#24292E">:  </span><span style="color:#032F62">"2022-01-19T10:41:00.000Z"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:  </span><span style="color:#005CC5">926.03</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">  { </span><span style="color:#005CC5">"id"</span><span style="color:#24292E">: </span><span style="color:#032F62">"4"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"timestamp"</span><span style="color:#24292E">:  </span><span style="color:#032F62">"2022-01-19T10:42:00.000Z"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:  </span><span style="color:#005CC5">513.01</span><span style="color:#24292E"> }</span></span>
+<span class="line"><span style="color:#24292E">]</span></span></code></pre>
+<p>We could receive this JSON in chunks like this:</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color:#24292E">[</span></span>
+<span class="line"><span style="color:#24292E">  { </span><span style="color:#005CC5">"id"</span><span style="color:#24292E">: </span><span style="color:#032F62">"1"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"timestamp"</span><span style="color:#24292E">:  </span><span style="color:#032F62">"2022-01-19T10:39:00.000Z"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:  </span><span style="color:#005CC5">239.34</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">  { </span><span style="color:#005CC5">"id"</span><span style="color:#24292E">: </span><span style="color:#032F62">"2"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"tim</span></span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5"> estamp"</span><span style="color:#24292E">:  </span><span style="color:#032F62">"2022-01-19T10:40:00.000Z"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:  </span><span style="color:#005CC5">820.14</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">  { </span><span style="color:#005CC5">"id"</span><span style="color:#24292E">: </span><span style="color:#032F62">"3"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"timestamp"</span><span style="color:#24292E">:  </span><span style="color:#032F62">"2022-01-19T10:41:00.000Z"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:  </span><span style="color:#005CC5">926.03</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">  { </span><span style="color:#005CC5">"id"</span><span style="color:#24292E">: </span><span style="color:#032F62">"4"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"timestamp"</span><span style="color:#24292E">:  </span><span style="color:#032F62">"2022-01-19T10:42</span></span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line"><span style="color:#032F62">:00.000Z"</span><span style="color:#24292E">, </span><span style="color:#005CC5">"value"</span><span style="color:#24292E">:  </span><span style="color:#005CC5">513.01</span><span style="color:#24292E"> }</span></span>
+<span class="line"><span style="color:#24292E">]</span></span></code></pre>
+<p>You need some way to determine where one measurement object starts and ends. To simplify this, we created a JSON file where each line contains precisely one object. Parsing the stream becomes manageable when we can make this assumption.</p>
+<p>Here is the implementation of <code>parseJsonStream(readableStream)</code></p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0"><code><span class="line"><span style="color:#D73A49">async</span><span style="color:#D73A49"> function</span><span style="color:#D73A49"> *</span><span style="color:#6F42C1">parseJsonStream</span><span style="color:#24292E">(</span><span style="color:#E36209">readableStream</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#D73A49"> await</span><span style="color:#24292E"> (</span><span style="color:#D73A49">const</span><span style="color:#005CC5"> line</span><span style="color:#D73A49"> of</span><span style="color:#6F42C1"> readLines</span><span style="color:#24292E">(readableStream.</span><span style="color:#6F42C1">getReader</span><span style="color:#24292E">())) {</span></span>
+<span class="line"><span style="color:#D73A49">        const</span><span style="color:#005CC5"> trimmedLine</span><span style="color:#D73A49"> =</span><span style="color:#24292E"> line.</span><span style="color:#6F42C1">trim</span><span style="color:#24292E">().</span><span style="color:#6F42C1">replace</span><span style="color:#24292E">(</span><span style="color:#032F62">/,</span><span style="color:#D73A49">$</span><span style="color:#032F62">/</span><span style="color:#24292E">, </span><span style="color:#032F62">''</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (trimmedLine </span><span style="color:#D73A49">!==</span><span style="color:#032F62"> '['</span><span style="color:#D73A49"> &#x26;&#x26;</span><span style="color:#24292E"> trimmedLine </span><span style="color:#D73A49">!==</span><span style="color:#032F62"> ']'</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">            yield</span><span style="color:#005CC5"> JSON</span><span style="color:#24292E">.</span><span style="color:#6F42C1">parse</span><span style="color:#24292E">(trimmedLine);</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">async</span><span style="color:#D73A49"> function</span><span style="color:#D73A49"> *</span><span style="color:#6F42C1">readLines</span><span style="color:#24292E">(</span><span style="color:#E36209">reader</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">    const</span><span style="color:#005CC5"> textDecoder</span><span style="color:#D73A49"> =</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> TextDecoder</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">    let</span><span style="color:#24292E"> partOfLine </span><span style="color:#D73A49">=</span><span style="color:#032F62"> ''</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#D73A49"> await</span><span style="color:#24292E"> (</span><span style="color:#D73A49">const</span><span style="color:#005CC5"> chunk</span><span style="color:#D73A49"> of</span><span style="color:#6F42C1"> readChunks</span><span style="color:#24292E">(reader)) {</span></span>
+<span class="line"><span style="color:#D73A49">        const</span><span style="color:#005CC5"> chunkText</span><span style="color:#D73A49"> =</span><span style="color:#24292E"> textDecoder.</span><span style="color:#6F42C1">decode</span><span style="color:#24292E">(chunk);</span></span>
+<span class="line"><span style="color:#D73A49">        const</span><span style="color:#005CC5"> chunkLines</span><span style="color:#D73A49"> =</span><span style="color:#24292E"> chunkText.</span><span style="color:#6F42C1">split</span><span style="color:#24292E">(</span><span style="color:#032F62">'</span><span style="color:#005CC5">\n</span><span style="color:#032F62">'</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (chunkLines.</span><span style="color:#005CC5">length</span><span style="color:#D73A49"> ===</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">            partOfLine </span><span style="color:#D73A49">+=</span><span style="color:#24292E"> chunkLines[</span><span style="color:#005CC5">0</span><span style="color:#24292E">];</span></span>
+<span class="line"><span style="color:#24292E">        } </span><span style="color:#D73A49">else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> (chunkLines.</span><span style="color:#005CC5">length</span><span style="color:#D73A49"> ></span><span style="color:#005CC5"> 1</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">            yield</span><span style="color:#24292E"> partOfLine </span><span style="color:#D73A49">+</span><span style="color:#24292E"> chunkLines[</span><span style="color:#005CC5">0</span><span style="color:#24292E">];</span></span>
+<span class="line"><span style="color:#D73A49">            for</span><span style="color:#24292E"> (</span><span style="color:#D73A49">let</span><span style="color:#24292E"> i</span><span style="color:#D73A49">=</span><span style="color:#005CC5">1</span><span style="color:#24292E">; i </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E"> chunkLines.</span><span style="color:#005CC5">length</span><span style="color:#D73A49"> -</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">; i</span><span style="color:#D73A49">++</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">                yield</span><span style="color:#24292E"> chunkLines[i];</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"><span style="color:#24292E">            partOfLine </span><span style="color:#D73A49">=</span><span style="color:#24292E"> chunkLines[chunkLines.</span><span style="color:#005CC5">length</span><span style="color:#D73A49"> -</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">];</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">function</span><span style="color:#6F42C1"> readChunks</span><span style="color:#24292E">(</span><span style="color:#E36209">reader</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">        async* [Symbol.asyncIterator]() {</span></span>
+<span class="line"><span style="color:#D73A49">            let</span><span style="color:#24292E"> readResult </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> await</span><span style="color:#24292E"> reader.</span><span style="color:#6F42C1">read</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">            while</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">readResult.done) {</span></span>
+<span class="line"><span style="color:#D73A49">                yield</span><span style="color:#24292E"> readResult.value;</span></span>
+<span class="line"><span style="color:#24292E">                readResult </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> await</span><span style="color:#24292E"> reader.</span><span style="color:#6F42C1">read</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"><span style="color:#24292E">        },</span></span>
+<span class="line"><span style="color:#24292E">    };</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>If you have control over the API you’re calling, you can use the “1 object per line” formatting as part of the contract, but know that it could be prone to breaking. For robust JSON support, we need a real streaming parser.</p>
+<p>Other options include using a format with one object per line by default, like CSV, or a more advanced format with built-in support for streaming like <a href="https://arrow.apache.org/docs/js/">Apache Arrow</a>.</p>
+<h2 id="advantages">Advantages</h2>
+<ol>
+<li><strong>Snappy User Experience:</strong> You can start showing data as soon as it’s available.</li>
+<li><strong>Scalable API:</strong> No memory usage spikes from accumulating results in memory.</li>
+<li><strong>Simple</strong>: Uses plain HTTP and a standard JavaScript API. There are no connections to manage or complicated frameworks that might become obsolete in a few years.</li>
+</ol>
+<h2 id="disadvantages">Disadvantages</h2>
+<ol>
+<li>
+<p>Implementation is slightly more involved than using regular API calls.</p>
+</li>
+<li>
+<p>Error handling becomes more difficult because HTTP status code 200 will be sent as soon as streaming starts. What do we do when something goes wrong in the middle of the stream?</p>
+<p>One options is to have your webapp determine if the stream was complete and show a fitting message to the user when it’s not. For example: when using a JSON response, as we discussed, you can check that the last line simply contains ”]“.</p>
+</li>
+<li>
+<p>No streaming JSON parser is currently available. Needs formatting assumptions as part of the contract or a more unconventional format.</p>
+</li>
+</ol> </article> <hr data-astro-cid-4sn4zg3r>
+      <h4 id="signup_newsletter">
+    Want to learn more? Sign up for the newsletter!
+</h4>
+<p>Stop trying to keep up with every new technology! Technologies come and go, the fundamentals of building good software don’t.</p>
+<p>Learn the stuff every full stack developer needs to know, the stuff that will stay relevant for years to come!</p>
+
+<style type="text/css">
+    .signup-form #mc_embed_signup .button {
+        background-color: var(--primary-color);
+    }
+
+    .signup-form #mc_embed_signup .button:hover {
+        background-color: var(--text-secondary);
+    }
+</style>
+<div id="mc_embed_shell" class="signup-form">
+    <link href="//cdn-images.mailchimp.com/embedcode/classic-061523.css" rel="stylesheet" type="text/css">
+    <style type="text/css">
+        #mc_embed_signup {
+            background: #fff;
+            false;
+            clear: left;
+            font: 14px Helvetica, Arial, sans-serif;
+            max-width: 600px;
+        }
+
+        /* Add your own Mailchimp form style overrides in your site stylesheet or in this style block.
+           We recommend moving this block and the preceding CSS link to the HEAD of your HTML file. */
+    </style>
+    <div id="mc_embed_signup">
+        <form action="https://nvnh.us17.list-manage.com/subscribe/post?u=e298845160752d2eba26fd749&amp;id=163da5c191&amp;f_id=0006bce0f0"
+              method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate"
+              target="_blank" novalidate="novalidate">
+            <div id="mc_embed_signup_scroll">
+                <div class="indicates-required"><span class="asterisk">*</span> indicates required</div>
+                <div class="mc-field-group"><label for="mce-EMAIL">Email Address <span class="asterisk">*</span></label><input
+                        type="email" name="EMAIL" class="required email" id="mce-EMAIL" required="" value=""
+                        aria-required="true"></div>
+                <div class="mc-field-group"><label for="mce-FNAME">(optional) First Name </label><input type="text"
+                                                                                                        name="FNAME"
+                                                                                                        class=" text"
+                                                                                                        id="mce-FNAME"
+                                                                                                        value="">
+                    <input type="hidden" name="tags" value="6590726">
+                </div>
+                <div id="mce-responses" class="clear foot">
+                    <div class="response" id="mce-error-response" style="display: none;"></div>
+                    <div class="response" id="mce-success-response" style="display: none;"></div>
+                </div>
+                <div style="position: absolute; left: -5000px;" aria-hidden="true">
+                    /* real people should not fill this in and expect good things – do not remove this or risk form bot
+                    signups */
+                    <input type="text" name="b_e298845160752d2eba26fd749_163da5c191" tabindex="-1" value="">
+                </div>
+                <div class="optionalParent">
+                    <div class="clear foot">
+                        <input type="submit" name="subscribe" id="mc-embedded-subscribe" class="button"
+                               value="Sign me up!">
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <script type="text/javascript" src="//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js"></script>
+    <script type="text/javascript">(function ($) {
+      window.fnames = new Array();
+      window.ftypes = new Array();
+      fnames[0] = 'EMAIL';
+      ftypes[0] = 'email';
+      fnames[1] = 'FNAME';
+      ftypes[1] = 'text';
+      fnames[2] = 'LNAME';
+      ftypes[2] = 'text';
+    }(jQuery));
+    var $mcj = jQuery.noConflict(true);</script>
+</div>
+
+
+<p>No spam, no sharing your data with third parties, unsubscribe at any time.</p>
+ </div>   </main> <footer data-astro-cid-sz7xmlte> <span data-astro-cid-sz7xmlte>
+&copy; 2024 NVNH.io.
+    Powered by <a href="https://astro.build" target="_blank" rel="noopener" data-astro-cid-sz7xmlte>Astro</a>.
+</span> </footer>  </div> </body></html> 
