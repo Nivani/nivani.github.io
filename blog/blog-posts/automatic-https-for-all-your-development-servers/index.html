@@ -10,7 +10,7 @@
 <p>If you’re using Windows Subsystem for Linux (WSL), <code>mkcert -install</code> will not install the CA certificate for browsers running on Windows. You will have to let them trust the root CA certificate manually. You can find out where the root CA certificate is stored by running <code>mkcert -CAROOT</code>.</p>
 <h3 id="docker-compose">Docker Compose</h3>
 <p>You will need <code>docker compose</code> to run the reverse proxy, so make sure you have Docker and <a href="https://docs.docker.com/compose/install/">Docker Compose</a> installed on your system.</p>
-<p>Try <code>docker compose --help</code> or <code>docker-compose --help</code> to see if you already have it installed.</p>
+<p>Try <code>docker compose --help</code> to see if you already have it installed.</p>
 <h2 id="overview">Overview</h2>
 <p>There are 3 high-level steps you need to go through:</p>
 <ol>
@@ -121,7 +121,7 @@
 <span class="line"><span style="color:#22863A">    extra_hosts</span><span style="color:#24292E">:</span></span>
 <span class="line"><span style="color:#24292E">      - </span><span style="color:#032F62">"host.docker.internal:host-gateway"</span></span></code></pre>
 <p>Traefik should now start without any problems by running <code>docker compose up</code>:</p>
-<p><img src="/assets/blog/traefik-started.png" alt="Console output for docker-compose up" title="Console output for docker-compose up"></p>
+<p><img src="/assets/blog/traefik-started.png" alt="Console output for docker compose up" title="Console output for docker compose up"></p>
 <h2 id="make-sure-your-domain-name-resolves-to-localhost">Make sure your domain name resolves to localhost</h2>
 <p>You’re almost ready to test, but there is still one thing missing. When you type in <code>https://8080.localhost.test</code> in your browser or run <code>curl https://8080.localhost.test/products</code> from the command line, your OS will ask a DNS Server “What’s the IP address for “8080.localhost.test”?” and that DNS server will have no idea. Luckily, the <a href="https://en.wikipedia.org/wiki/Hosts_(file)">hosts file</a> can help you with that.</p>
 <p>You will find your hosts file at <code>/etc/hosts</code> on Unix-based systems and <code>C:\Windows\System32\drivers\etc\hosts</code> on Windows. Open the file and add the following lines:</p>
