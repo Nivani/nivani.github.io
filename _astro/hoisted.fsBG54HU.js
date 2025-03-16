@@ -1,0 +1,1 @@
+import"./hoisted.nXAUxZIp.js";e(.1);e(.4);e(.75);e(.9);function e(t){const o=n=>{const l=window.scrollY,c=n.target.offsetHeight||document.body.offsetHeight;l/c>t&&(umami.track(`Scroll ${t*100} percent`),removeEventListener("scrollend",o))};addEventListener("scrollend",o)}
