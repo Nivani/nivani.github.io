@@ -247,7 +247,12 @@ The next day you push some completely unrelated code and your test from the day 
       setTimeout(function () {
         const form = document.getElementById("mc-embedded-subscribe-form");
         if (form) {
-          form.action = "https://nvnh.us17.list-manage.com/subscribe/post?u=e298845160752d2eba26fd749&amp;id=163da5c191&amp;f_id=0006bce0f0";
+          form.action = [
+            "https:/",
+            "nvnh.us17.list-manage.com",
+            "subscribe",
+            "post?u=e298845160752d2eba26fd749&amp;id=163da5c191&amp;f_id=0006bce0f0",
+          ].join("/");
         }
 
         const mailChimpScript = document.createElement("script");
@@ -267,6 +272,6 @@ The next day you push some completely unrelated code and your test from the day 
 </div>
 <p>No spam, no sharing your data with third parties, unsubscribe at any time.</p> </div>
  </div>   </main> <footer data-astro-cid-sz7xmlte> <span data-astro-cid-sz7xmlte>
-&copy; 2025 NVNH.io.
+&copy; 2026 NVNH.io.
     Powered by <a href="https://astro.build" target="_blank" rel="noopener" data-astro-cid-sz7xmlte>Astro</a>.
 </span> </footer>  </div> </body></html> 
