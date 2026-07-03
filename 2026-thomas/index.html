@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Kaart Thomas</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css">
+  <style>
+    .reveal .slides {
+      perspective: 1400px;
+    }
+
+    .reveal .slides > section {
+      transition: transform 0.8s ease-in-out !important;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      opacity: 1 !important;
+        height: 100%;
+        display: flex;
+        align-content: center;
+    }
+
+    /* Keep past/future slides visible so flip animation is visible */
+    .reveal .slides > section.past,
+    .reveal .slides > section.future {
+      display: block !important;
+      pointer-events: none;
+    }
+
+    .reveal .slides > section.present {
+      transform: rotateY(0deg) !important;
+    }
+
+    .reveal .slides > section.past {
+      transform: rotateY(-180deg) !important;
+    }
+
+    .reveal .slides > section.future {
+      transform: rotateY(180deg) !important;
+    }
+
+    .reveal .slides > section {
+      cursor: pointer;
+    }
+
+    /* Image slide */
+    .reveal .slides > section img {
+      max-height: 100%;
+      max-width: 100%;
+      border: none;
+      box-shadow: none;
+      margin: 0;
+    }
+
+    /* Text slide */
+    .reveal .slides > section h2 {
+      font-size: 2.8em;
+      color: #222;
+      font-weight: normal;
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <section>
+        <img src="image.png" alt="">
+      </section>
+      <section>
+        <h2>Wandeling met lunch.</h2>
+      </section>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      transition: 'none',
+      controls: true,
+      progress: false,
+      hash: true,
+    });
+
+    Reveal.on('ready', () => {
+      document.querySelectorAll('.reveal .slides > section').forEach((slide, index) => {
+        slide.addEventListener('click', () => {
+          if (index === 0) {
+            Reveal.next();
+          } else {
+            Reveal.prev();
+          }
+        });
+      });
+    });
+</script>
+</body>
+</html>
